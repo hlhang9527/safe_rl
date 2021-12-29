@@ -135,7 +135,7 @@ def cppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
          num_test_episodes=10, ent_bonus=0.001, scaling=100., dont_normalize_adv=False,
          # Cost constraint/penalties
          cost_lim=0.01, penalty=1., penalty_lr=5e-2, update_penalty_every=1,
-         optimize_penalty=False, ignore_unsafe_cost=False
+         optimize_penalty=False, ignore_unsafe_cost=False, pretrain_model_path='',
          ):
     """
     Proximal Policy Optimization (by clipping),
@@ -281,7 +281,7 @@ def cppo(env_fn, actor_critic=core.MLPActorCritic, ac_kwargs=dict(), seed=0,
     max_ep_len = min(max_ep_len, env.env._max_episode_steps)
 
     # Create actor-critic module
-    ac = actor_critic(env.observation_space, env.action_space, v_range=v_range,
+    ac = actor_critic(env.observation_space, env.action_space, pretrain_model_path, v_range=v_range,
                       vc_range=vc_range, pred_std=True, **ac_kwargs)
 
     # Sync params across processes

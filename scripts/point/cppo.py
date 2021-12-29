@@ -13,6 +13,15 @@ from extra_envs.intervener import (Intervener, PointIntervenerRollout,
 
 parser = argparse.ArgumentParser()
 
+# Pretrain model
+parser.add_argument('--pretrain_model_path', type=str, default='',
+                    help="Path to pretrain model. No pretrain if empty.")
+
+#Env Change
+parser.add_argument('--mass', type=float, default=1.)
+parser.add_argument('--target_dist', type=float, default=5.)
+parser.add_argument('--xlim', type=float, default=4)
+
 # Neural network
 parser.add_argument('--hid', type=int, default=64)
 parser.add_argument('--l', type=int, default=2)
@@ -31,13 +40,15 @@ parser.add_argument('--dont_normalize_adv', '-dna', action='store_true')
 parser.add_argument('--cost_lim', type=float, default=0.01)
 parser.add_argument('--penalty', type=float, default=2.)
 parser.add_argument('--optimize_penalty', action='store_true')
-parser.add_argument('--ignore_unsafe_cost', action='store_true')
+parser.add_argument('--ignore_unsafe_cost', action='store_true') #if --ignore_unsafe exists, store_true
 parser.add_argument('--penalty_lr', type=float, default=5e-2)
 
 # Intervention
 parser.add_argument('--intv_config', type=str, default='',
                     help="Path to intervener config file. No intv if empty.")
-parser.add_argument('--model_config', type=str, default='model/unbiased.yaml')
+# parser.add_argument('--model_config', type=str, default='model/unbiased.yaml')
+parser.add_argument('--model_config', type=str, default='/home/hallie/Desktop/paper_code/safe_rl/scripts/point/model/unbiased.yaml')
+
 
 # Misc.
 parser.add_argument('--exp_name', type=str, default='point')
@@ -47,7 +58,7 @@ parser.add_argument('--num_test_episodes', type=int, default=10)
 
 args = parser.parse_args()
 
-mpi_fork(args.cpu)
+# mpi_fork(args.cpu)
 logger_kwargs = setup_logger_kwargs(args.exp_name, args.seed)
 
 with open(args.model_config) as f:
@@ -68,7 +79,8 @@ else:
     IntervenerCls = eval(intv_kwargs.pop('Cls', 'PointIntervenerRollout'))
 
 def env_fn():
-    env = gym.make('extra_envs:Point-v0', cost_smoothing=args.cost_smoothing)
+    env = gym.make('extra_envs:Point-v0', 
+    mass=args.mass, target_dist=args.target_dist, xlim=args.xlim, cost_smoothing=args.cost_smoothing,)
     sim_env = gym.make('extra_envs:Point-v0', **sim_env_kwargs)
     if 'gamma' not in intv_kwargs:
         intv_kwargs['gamma'] = args.gamma
@@ -81,4 +93,5 @@ cppo(env_fn, actor_critic=core.MLPActorCritic,
      epochs=args.epochs, logger_kwargs=logger_kwargs, cost_lim=args.cost_lim,
      penalty=args.penalty, optimize_penalty=args.optimize_penalty,
      penalty_lr=args.penalty_lr, ent_bonus=args.ent_bonus,
-     ignore_unsafe_cost=args.ignore_unsafe_cost, num_test_episodes=args.num_test_episodes)
+     ignore_unsafe_cost=args.ignore_unsafe_cost, num_test_episodes=args.num_test_episodes,
+     pretrain_model_path=args.pretrain_model_path)

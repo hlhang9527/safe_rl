@@ -125,7 +125,7 @@ class MLPCritic(nn.Module):
 class MLPActorCritic(nn.Module):
 
 
-    def __init__(self, observation_space, action_space,
+    def __init__(self, observation_space, action_space, pretrain_model_path,
                  hidden_sizes=(64,64), activation=nn.Tanh,
                  v_range=(float('-inf'), float('inf')),
                  vc_range=(float('-inf'), float('inf')),
@@ -144,7 +144,14 @@ class MLPActorCritic(nn.Module):
         # build value function
         self.v  = MLPCritic(obs_dim, hidden_sizes, activation, v_range)
         self.vc = MLPCritic(obs_dim, hidden_sizes, activation, vc_range)
-
+        if pretrain_model_path is not "":
+            total = torch.load(pretrain_model_path)
+            self.pi = total.pi
+            self.v = total.v
+            self.vc = total.vc
+            self.pi.pi_net.eval()
+            self.v.v_net.eval()
+            self.vc.v_net.eval()            
     def step(self, obs):
         with torch.no_grad():
             pi = self.pi._distribution(obs)
